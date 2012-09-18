@@ -1,0 +1,346 @@
+<h1>Listing reports</h1>
+<table>
+  <tr>
+    <th>Client</th>
+    <th>Title</th>
+    <th>Analytics key</th>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+
+<% @reports.each do |report| %>
+  <tr>
+    <td><%= report.client %></td>
+    <td><%= report.title %></td>
+    <td><%= report.analytics_key %></td>
+    <td><%= link_to 'Show', report %></td>
+    <td><%= link_to 'Edit', edit_report_path(report) %></td>
+    <td><%= link_to 'Destroy', report, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+  </tr>©
+<% end %>
+
+
+</table>
+
+<br />
+<h2><%= @start_date.to_formatted_s(:rfc822) %> to <%= @end_date.to_formatted_s(:rfc822) %> (<%= @days %> days)</h2>
+<p>This site had <%= number_with_delimiter(@total_visits) %> visits and <%= number_with_delimiter(@stats.first.pageviews) %> page views. <%= number_to_percentage(@percentage_mobile_visits, :precision => 1) %> of visits and <%= number_to_percentage(@percentage_mobile_pageviews, :precision => 1) %> of pageviews were from mobile devices. <%= number_to_percentage(@percentage_organic_visits, :precision => 1) %> of visits originated from non-paid search engine listings. <%= number_to_percentage(@percentage_referral_visits, :precision => 1) %> of visits were referred from another site. <%= number_to_percentage(@percentage_direct_visits, :precision => 1) %> of visits were direct.</p>
+<h3>Top Pages</h3>
+<% (0..9).each do |index| %>
+<% datum = @visit_data[index] %>
+  <p><% if Integer(datum.visits) > 0 %><%= datum.page_path %>: <%= number_with_delimiter(datum.visits) %> visits | <%= number_with_delimiter(datum.pageviews) %> pageviews<% end %></p>
+<% end %>
+<h3>Top Sources</h3>
+<% (0..9).each do |index| %>
+<% datum = @source_data[index] %>
+  <p><% if Integer(datum.visits) > 0 %><%= datum.source %> (<%= datum.medium %>): <%= number_with_delimiter(datum.visits) %> visits | <%= number_with_delimiter(datum.pageviews) %> pageviews<% end %></p>
+<% end %>
+<br />
+
+<h3>Average Visits per Time and Day of the Week</h3>
+<table style="width:100%;">
+  <tr>
+    <th></th>
+    <th>0</th>
+    <th>1</th>
+    <th>2</th>
+    <th>3</th>
+    <th>4</th>
+    <th>5</th>
+    <th>6</th>
+    <th>7</th>
+    <th>8</th>
+    <th>9</th>
+    <th>10</th>
+    <th>11</th>
+    <th>12</th>
+    <th>13</th>
+    <th>14</th>
+    <th>15</th>
+    <th>16</th>
+    <th>17</th>
+    <th>18</th>
+    <th>19</th>
+    <th>20</th>
+    <th>21</th>
+    <th>22</th>
+    <th>23</th>
+  </tr>
+  <% @day_labels = ['Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat'] %>
+  <% @two_d_plot_visits.each_with_index do |datum, index| %>
+    <tr>
+      <th><%= @day_labels[index] %></th>
+    <% datum.each do |dot| %>
+    <% color = (dot.to_f/(@two_d_plot_visits_max - @two_d_plot_visits_min) * 255).ceil.to_s %>
+    <% color_hsl = (dot.to_f/@two_d_plot_visits_max * 220).floor %>
+      <td style="width:4%;height:40px;background:rgb(<%= color + ',' + color + ',' + color %>);background-color:hsl(<%= (color_hsl - 220).abs %>,60%, 50%);border-radius:2px;text-align:center;font-family:sans-serif;font-size:11px;color:#fff;" title="<%= dot %> visits"><%= dot %></td>
+    <% end %>
+    </tr>
+  <% end %>
+</table>
+
+<h3>Average Pageviews per Time and Day of the Week</h3>
+<table style="width:100%;">
+  <tr>
+    <th></th>
+    <th>0</th>
+    <th>1</th>
+    <th>2</th>
+    <th>3</th>
+    <th>4</th>
+    <th>5</th>
+    <th>6</th>
+    <th>7</th>
+    <th>8</th>
+    <th>9</th>
+    <th>10</th>
+    <th>11</th>
+    <th>12</th>
+    <th>13</th>
+    <th>14</th>
+    <th>15</th>
+    <th>16</th>
+    <th>17</th>
+    <th>18</th>
+    <th>19</th>
+    <th>20</th>
+    <th>21</th>
+    <th>22</th>
+    <th>23</th>
+  </tr>
+  <% @day_labels = ['Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat'] %>
+  <% @two_d_plot_pageviews.each_with_index do |datum, index| %>
+    <tr>
+      <th><%= @day_labels[index] %></th>
+    <% datum.each_with_index do |dot, hour| %>
+    <% color = (dot.to_f/@two_d_plot_pageviews_max * 255).floor.to_s %>
+    <% color_hsl = (dot.to_f/@two_d_plot_pageviews_max * 220).floor %>
+      <td style="width:4%;height:40px;background:rgb(<%= color + ',' + color + ',' + color %>);background-color:hsl(<%= (color_hsl - 220).abs %>,60%, 50%);border-radius:2px;text-align:center;font-family:sans-serif;font-size:11px;color:#fff;" title="<%= @day_labels[index] %> <%= hour %>: <%= dot %> pageviews"><%= dot %></td>
+    <% end %>
+    </tr>
+  <% end %>
+</table>
+
+<!--Load the AJAX API-->
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+         google.load("visualization", "1", {packages:["corechart"]});
+         google.setOnLoadCallback(drawCharts);
+         function drawCharts() {
+            drawVisitsChart();
+            drawPageviewsChart();
+
+            drawWeekdayVisitsChart();
+            drawWeekdayPageviewsChart();
+
+            drawWeekendVisitsChart();
+            drawWeekendPageviewsChart();
+
+            drawMobileVisitsChart();
+
+            drawVisitDayBarChart();
+            drawPageviewsDayBarChart();
+         }
+         function drawVisitsChart() {
+           var data = google.visualization.arrayToDataTable([
+             ['Day', 'Visits', 'Linear Model'],
+             <% @visit_date_data.each_with_index do |datum, index| %>
+               ['<%= datum.date.to_date.to_formatted_s(:rfc822) %>',  <%= datum.visits %>, <%= ( index * @visits_linear_model.slope ) + @visits_linear_model.y_intercept %>],
+             <% end %>
+           ]);
+
+           var options = {
+             title: 'Visits Over Time'
+           };
+
+           var chart = new google.visualization.LineChart(document.getElementById('visits_chart_div'));
+           chart.draw(data, options);
+         }
+
+         function drawPageviewsChart() {
+           var data = google.visualization.arrayToDataTable([
+             ['Day', 'Pageviews', 'Linear Model'],
+             <% @visit_date_data.each_with_index do |datum, index| %>
+               ['<%= datum.date.to_date.to_formatted_s(:rfc822) %>',  <%= datum.pageviews %>, <%= ( index * @pageviews_linear_model.slope ) + @pageviews_linear_model.y_intercept %>],
+             <% end %>
+           ]);
+
+           var options = {
+             title: 'Pageviews Over Time'
+           };
+
+           var chart = new google.visualization.LineChart(document.getElementById('pageviews_chart_div'));
+           chart.draw(data, options);
+         }
+
+         function drawWeekdayVisitsChart() {
+           var data = google.visualization.arrayToDataTable([
+             ['Day', 'Visits', 'Linear Model'],
+             <% i = 0 %>
+             <% @visit_date_data.each_with_index do |datum, index| %>
+              <% if datum.day_of_week.to_i != 6 && datum.day_of_week.to_i != 0 %>
+               ['<%= datum.date.to_date.to_formatted_s(:rfc822) %>',  <%= datum.visits %>, <%= ( i * @weekday_visits_linear_model.slope ) + @weekday_visits_linear_model.y_intercept %>],
+               <% i += 1 %>
+              <% end %>
+             <% end %>
+           ]);
+
+           var options = {
+             title: 'Weekday Visits Over Time'
+           };
+
+           var chart = new google.visualization.LineChart(document.getElementById('weekday_visits_chart_div'));
+           chart.draw(data, options);
+         }
+
+         function drawWeekdayPageviewsChart() {
+           var data = google.visualization.arrayToDataTable([
+             ['Day', 'Pageviews', 'Linear Model'],
+             <% i = 0 %>
+             <% @visit_date_data.each_with_index do |datum, index| %>
+              <% if datum.day_of_week.to_i != 6 && datum.day_of_week.to_i != 0 %>
+                ['<%= datum.date.to_date.to_formatted_s(:rfc822) %>',  <%= datum.pageviews %>, <%= ( i * @weekday_pageviews_linear_model.slope ) + @weekday_pageviews_linear_model.y_intercept %>],
+              <% i += 1 %>
+              <% end %>
+             <% end %>
+           ]);
+
+           var options = {
+             title: 'Weekday Pageviews Over Time'
+           };
+
+           var chart = new google.visualization.LineChart(document.getElementById('weekday_pageviews_chart_div'));
+           chart.draw(data, options);
+         }
+
+         function drawWeekendVisitsChart() {
+           var data = google.visualization.arrayToDataTable([
+             ['Day', 'Visits', 'Linear Model'],
+             <% i = 0 %>
+             <% @visit_date_data.each_with_index do |datum, index| %>
+              <% if datum.day_of_week.to_i == 6 or datum.day_of_week.to_i == 0 %>
+               ['<%= datum.date.to_date.to_formatted_s(:rfc822) %>',  <%= datum.visits %>, <%= ( i * @weekend_visits_linear_model.slope ) + @weekend_visits_linear_model.y_intercept %>],
+               <% i += 1 %>
+              <% end %>
+             <% end %>
+           ]);
+
+           var options = {
+             title: 'Weekend Visits Over Time'
+           };
+
+           var chart = new google.visualization.LineChart(document.getElementById('weekend_visits_chart_div'));
+           chart.draw(data, options);
+         }
+
+         function drawWeekendPageviewsChart() {
+           var data = google.visualization.arrayToDataTable([
+             ['Day', 'Pageviews', 'Linear Model'],
+             <% i = 0 %>
+             <% @visit_date_data.each_with_index do |datum, index| %>
+              <% if datum.day_of_week.to_i == 6 or datum.day_of_week.to_i == 0 %>
+                ['<%= datum.date.to_date.to_formatted_s(:rfc822) %>',  <%= datum.pageviews %>, <%= ( i * @weekend_pageviews_linear_model.slope ) + @weekend_pageviews_linear_model.y_intercept %>],
+              <% i += 1 %>
+              <% end %>
+             <% end %>
+           ]);
+
+           var options = {
+             title: 'Weekend Pageviews Over Time'
+           };
+
+           var chart = new google.visualization.LineChart(document.getElementById('weekend_pageviews_chart_div'));
+           chart.draw(data, options);
+         }
+
+         function drawMobileVisitsChart() {
+           var data = google.visualization.arrayToDataTable([
+             ['Day', '% Mobile Visits', 'Linear Model'],
+             <% @mobile_percentage_by_date.each_with_index do |datum, index| %>
+              ['<%= datum[0].to_date.to_formatted_s(:rfc822) %>',  <%= datum[1] %>, <%= ( index * @mobile_visits_linear_model.slope ) + @mobile_visits_linear_model.y_intercept %>],
+             <% end %>
+           ]);
+
+           var options = {
+             title: 'Mobile Visit Percentage Over Time'
+           };
+
+           var chart = new google.visualization.LineChart(document.getElementById('mobile_visits_chart_div'));
+           chart.draw(data, options);
+         }
+
+         function drawVisitDayBarChart() {
+                 var data = google.visualization.arrayToDataTable([
+                   ['Day', 'Average Visits'],
+                   ['Sunday',  <%= @day_visit_averages[0] %>],
+                   ['Monday',  <%= @day_visit_averages[1] %>],
+                   ['Tuesday',  <%= @day_visit_averages[2] %>],
+                   ['Wednesday',  <%= @day_visit_averages[3] %>],
+                   ['Thursday',  <%= @day_visit_averages[4] %>],
+                   ['Friday',  <%= @day_visit_averages[5] %>],
+                   ['Saturday',  <%= @day_visit_averages[6] %>]
+                 ]);
+
+                 var options = {
+                   title: 'Average Visits by Day of the Week',
+                   vAxis: {title: 'Day'}
+                 };
+
+                 var chart = new google.visualization.BarChart(document.getElementById('day_visit_bar_chart_div'));
+                 chart.draw(data, options);
+               }
+
+          function drawPageviewsDayBarChart() {
+                  var data = google.visualization.arrayToDataTable([
+                    ['Day', 'Average Pageviews'],
+                    ['Sunday',  <%= @day_pageview_averages[0] %>],
+                    ['Monday',  <%= @day_pageview_averages[1] %>],
+                    ['Tuesday',  <%= @day_pageview_averages[2] %>],
+                    ['Wednesday',  <%= @day_pageview_averages[3] %>],
+                    ['Thursday',  <%= @day_pageview_averages[4] %>],
+                    ['Friday',  <%= @day_pageview_averages[5] %>],
+                    ['Saturday',  <%= @day_pageview_averages[6] %>]
+                  ]);
+
+                  var options = {
+                    title: 'Average Pageviews by Day of the Week',
+                    vAxis: {title: 'Day'}
+                  };
+
+                  var chart = new google.visualization.BarChart(document.getElementById('day_pageview_bar_chart_div'));
+                  chart.draw(data, options);
+                }
+       </script>
+
+    <div id="visits_chart_div" style="width: 100%; height: 500px;"></div>
+    <% if @visits_linear_model.slope > 0 %><h3>Hurray! Visits are trending upward!</h3><% end %>
+    <p>Model: Visits = <%= @visits_linear_model.y_intercept %> + <%= @visits_linear_model.slope %> * Day</p>
+
+
+    <div id="pageviews_chart_div" style="width: 100%; height: 500px;"></div>
+    <% if @pageviews_linear_model.slope > 0 %><h3>Hurray! Pageviews are trending upward!</h3><% end %>
+    <p>Model: Visits = <%= @pageviews_linear_model.y_intercept %> + <%= @pageviews_linear_model.slope %> * Day</p>
+    
+    <div id="weekday_visits_chart_div" style="width: 100%; height: 500px;"></div>
+    <% if @weekday_visits_linear_model.slope > 0 %><h3>Hurray! Weekday visits are trending upward!</h3><% end %>
+    <p>Model: Visits = <%= @weekday_visits_linear_model.y_intercept %> + <%= @weekday_visits_linear_model.slope %> * Day</p>
+
+    <div id="weekday_pageviews_chart_div" style="width: 100%; height: 500px;"></div>
+    <% if @weekday_pageviews_linear_model.slope > 0 %><h3>Hurray! Weekday pageviews are trending upward!</h3><% end %>
+    <p>Model: Visits = <%= @weekday_pageviews_linear_model.y_intercept %> + <%= @weekday_pageviews_linear_model.slope %> * Day</p>
+
+    <div id="weekend_visits_chart_div" style="width: 100%; height: 500px;"></div>
+    <% if @weekend_visits_linear_model.slope > 0 %><h3>Hurray! Weekend visits are trending upward!</h3><% end %>
+    <p>Model: Visits = <%= @weekend_visits_linear_model.y_intercept %> + <%= @weekend_visits_linear_model.slope %> * Day</p>
+
+    <div id="weekend_pageviews_chart_div" style="width: 100%; height: 500px;"></div>
+    <% if @weekend_pageviews_linear_model.slope > 0 %><h3>Hurray! Weekend pageviews are trending upward!</h3><% end %>
+    <p>Model: Visits = <%= @weekend_pageviews_linear_model.y_intercept %> + <%= @weekend_pageviews_linear_model.slope %> * Day</p>
+
+    <div id="mobile_visits_chart_div" style="width: 100%; height: 500px;"></div>
+    <% if @mobile_visits_linear_model.slope > 0 %><h3>Hurray! Mobile visit percentage is trending upward!</h3><% end %>
+    <p>Model: Visits = <%= @mobile_visits_linear_model.y_intercept %> + <%= @mobile_visits_linear_model.slope %> * Day</p>
+
+    <div id="day_visit_bar_chart_div" style="width: 100%; height: 500px;"></div>
+    <div id="day_pageview_bar_chart_div" style="width: 100%; height: 500px;"></div>
